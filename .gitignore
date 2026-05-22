@@ -1,0 +1,52 @@
+# ─── Environment & Secrets ────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Dependencies ─────────────────────────────────────
+node_modules/
+
+# ─── Build Output ─────────────────────────────────────
+dist/
+
+# ─── Logs ─────────────────────────────────────────────
+.logs/
+*.log
+
+# ─── OS Junk ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ─── IDE ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Binaries & Downloads ────────────────────────────
+*.exe
+*.zip
+*.tar.gz
+
+# ─── Tunnel & Local Launcher Files ───────────────────
+tunnel_url.txt
+cloudflared_stdout.log
+cloudflared_stderr.log
+Worm.bat
+Worm.ps1
+run_tunnel.bat
+start-serveo.bat
+setup_cloudflared.ps1
+tui.ps1
+tui.py
+tui.txt
+tuil.txt
+Comandos.txt
+
+# ─── Misc ─────────────────────────────────────────────
+package-lock.json
+eslint-report.json
+lint-errors.txt
+test_api.cjs
+test_api.mjs

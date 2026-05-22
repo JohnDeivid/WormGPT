@@ -1,0 +1,408 @@
+/* ═══════════════════════════════════════════════════════════════
+   WormGPT App Styles — Dark + Red theme, zero blue-grey
+   ═══════════════════════════════════════════════════════════════ */
+
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* ─── Global background: matches login page ───────────────────── */
+body {
+  background: #08080a;
+}
+
+/* Radial red glow ambient — identical to login page */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 15% 80%, rgba(220,38,38,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 20%, rgba(220,38,38,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 110%, rgba(220,38,38,0.03) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Password Overlay ───────────────────────────────────────── */
+.password-overlay {
+  background: #08080a;
+}
+.password-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 72%, rgba(220,38,38,0.08) 0%, transparent 52%),
+    radial-gradient(circle at 82% 28%, rgba(220,38,38,0.05) 0%, transparent 52%);
+  pointer-events: none;
+}
+
+/* ─── Glitch animation (wrong password) ─────────────────────── */
+@keyframes glitch {
+  0%, 100% { transform: translate(0); filter: none; }
+  15%  { transform: translate(-2px,  2px); filter: hue-rotate(60deg); }
+  30%  { transform: translate( 2px, -2px); filter: hue-rotate(180deg); }
+  45%  { transform: translate(-2px, -2px); filter: hue-rotate(270deg); }
+  60%  { transform: translate( 2px,  2px); filter: hue-rotate(360deg); }
+  75%  { transform: translate(-1px,  1px); }
+  90%  { transform: translate(0); }
+}
+
+/* ─── Sidebar ────────────────────────────────────────────────── */
+aside {
+  background: hsl(0 0% 4%) !important;
+  border-right-color: hsl(0 0% 10%) !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Sidebar items: active state with red accent, no blue tones */
+.sidebar-item-active {
+  background: rgba(220, 38, 38, 0.1) !important;
+  color: #f87171 !important;
+  border-left: 2px solid #dc2626;
+}
+
+/* ─── Main content area ──────────────────────────────────────── */
+main {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+  transition: none;
+}
+
+/* ─── Hero Section ───────────────────────────────────────────── */
+.hero-card {
+  background: hsl(0 0% 6%);
+  border: 1px solid hsl(0 0% 11%);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+.hero-card:hover {
+  background: hsl(0 0% 8%);
+  border-color: rgba(220, 38, 38, 0.3);
+  transform: translateY(-1px);
+}
+.hero-card:hover .hero-card-icon {
+  color: #ef4444;
+}
+
+.hero-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  color: rgba(220, 38, 38, 0.5);
+  flex-shrink: 0;
+  transition: color 0.2s, background 0.2s;
+}
+
+.hero-logo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+}
+
+.hero-label-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(220, 38, 38, 0.7);
+  text-transform: uppercase;
+}
+
+.hero-accent-text {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Input Bar ──────────────────────────────────────────────── */
+.input-container {
+  background: hsl(0 0% 6%);
+  border: 1px solid hsl(0 0% 13%);
+  border-radius: 24px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input-container:focus-within {
+  border-color: rgba(220, 38, 38, 0.4);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.06);
+}
+
+/* ─── User message bubble ────────────────────────────────────── */
+.user-bubble {
+  background: hsl(0 0% 8%);
+  border: 1px solid hsl(0 0% 13%);
+  border-radius: 18px 18px 4px 18px;
+}
+
+/* ─── AI message ─────────────────────────────────────────────── */
+.ai-message { border-left: 2px solid transparent; }
+.ai-message:hover { border-left-color: rgba(220,38,38,0.2); }
+
+/* ─── Loading indicator ──────────────────────────────────────── */
+.loading-indicator-bg {
+  background: hsl(0 0% 8%);
+  border: 1px solid hsl(0 0% 13%);
+}
+
+/* ─── Loading dots ───────────────────────────────────────────── */
+.loading-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #dc2626;
+  animation: loadingPulse 1.2s ease-in-out infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; background: #ef4444; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; background: #f87171; }
+
+@keyframes loadingPulse {
+  0%, 100% { transform: scale(0.65); opacity: 0.35; }
+  50%       { transform: scale(1);   opacity: 1; }
+}
+
+/* ─── Stop button ────────────────────────────────────────────── */
+.stop-btn {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: #f87171;
+  transition: background 0.2s, border-color 0.2s;
+}
+.stop-btn:hover {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #ef4444;
+}
+
+/* ─── Code block overrides ───────────────────────────────────── */
+.code-block-body {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  tab-size: 2;
+  background: hsl(0 0% 5%);
+  color: #c8e6c8;
+}
+
+/* ─── Tool popup arrow ───────────────────────────────────────── */
+.tool-popup::after {
+  content: '';
+  position: absolute;
+  bottom: -5px; left: 20px;
+  width: 10px; height: 10px;
+  background: hsl(0 0% 7%);
+  border-right: 1px solid rgba(220,38,38,0.2);
+  border-bottom: 1px solid rgba(220,38,38,0.2);
+  transform: rotate(45deg);
+}
+
+/* ─── Shimmer ────────────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0)    0%,
+    rgba(255,255,255,0.04) 50%,
+    rgba(255,255,255,0)    100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ─── Hacker text ────────────────────────────────────────────── */
+.hacker-text {
+  font-family: 'Courier New', 'Monaco', monospace;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+}
+
+/* ─── Consensus pulse ────────────────────────────────────────── */
+@keyframes consensus-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.consensus-pulse { animation: consensus-pulse 1s ease-in-out infinite; }
+
+/* ─── Red glow accent (used on active sidebar items) ─────────── */
+.red-glow { box-shadow: 0 0 12px rgba(220, 38, 38, 0.15); }
+
+/* ─── Responsive layout: perfectly centered content ─────────── */
+@media (max-width: 640px) {
+  .max-w-2xl, .max-w-3xl { max-width: 100%; }
+}
+
+/* Chat content always centered, regardless of sidebar state */
+.chat-content-wrapper {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Input bar always centered, regardless of sidebar state */
+.input-bar-wrapper {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ─── Touch targets ──────────────────────────────────────────── */
+button, [role="button"] { user-select: none; }
+@media (pointer: coarse) {
+  button, [role="button"] { min-height: 40px; min-width: 40px; }
+}
+
+/* ─── No glow on buttons ─────────────────────────────────────── */
+button { box-shadow: none !important; }
+button:hover { box-shadow: none !important; }
+
+/* ─── Theme transitions ──────────────────────────────────────── */
+html, body, main, div {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ─── Light glass ────────────────────────────────────────────── */
+.light .glass {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+}
+
+/* ─── Light mode overrides ───────────────────────────────────── */
+.light body::before { opacity: 0.3; }
+.light .hero-card { background: hsl(0 0% 97%); border-color: hsl(0 0% 90%); }
+.light .hero-card:hover { background: hsl(0 0% 95%); }
+.light .input-container { background: hsl(0 0% 98%); border-color: hsl(0 0% 88%); }
+.light .loading-indicator-bg { background: hsl(0 0% 96%); border-color: hsl(0 0% 88%); }
+.light .stop-btn { background: rgba(220,38,38,0.06); }
+.light aside { background: hsl(0 0% 97%) !important; border-right-color: hsl(0 0% 90%) !important; }
+.light .code-block-body { background: hsl(0 0% 96%); color: #1a5c1a; }
+
+/* ─── Sidebar WG brand dot ───────────────────────────────────── */
+.sidebar-brand-dot {
+  background: linear-gradient(135deg, #dc2626, #7f1d1d);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Section label in sidebar ───────────────────────────────── */
+.sidebar-section-label {
+  color: rgba(220, 38, 38, 0.45);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* ─── New Chat button in sidebar ─────────────────────────────── */
+.new-chat-btn {
+  background: transparent;
+  border: 1px solid hsl(0 0% 13%);
+  color: hsl(0 0% 75%);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.new-chat-btn:hover {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.06);
+  color: #f87171;
+}
+
+/* ─── Scrollbar in dark panels ───────────────────────────────── */
+.dark-scroll::-webkit-scrollbar { width: 4px; }
+.dark-scroll::-webkit-scrollbar-track { background: transparent; }
+.dark-scroll::-webkit-scrollbar-thumb { background: hsl(0 0% 16%); border-radius: 4px; }
+
+/* ─── Error message in chat ──────────────────────────────────── */
+.ai-message-error {
+  border-left: 2px solid rgba(220, 38, 38, 0.4) !important;
+  background: rgba(220, 38, 38, 0.03);
+  border-radius: 0 8px 8px 0;
+  padding-left: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WormGPT Mobile Specific Overrides & Enhancements
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* Dynamic viewport height support */
+  .mobile-h-dvh {
+    height: 100dvh !important;
+  }
+  
+  /* Input bar container on mobile */
+  .input-bar-container {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
+    background: linear-gradient(180deg, transparent 0%, #030303 30%, #030303 100%) !important;
+  }
+  .light .input-bar-container {
+    background: linear-gradient(180deg, transparent 0%, #f7f7f7 30%, #f7f7f7 100%) !important;
+  }
+
+  /* Chat list padding */
+  .chat-scroll-viewport {
+    padding-bottom: 0 !important;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Fixed sidebar drawer */
+  .sidebar-drawer-mobile {
+    position: fixed !important;
+    inset-y: 0 !important;
+    left: 0 !important;
+    z-index: 50 !important;
+    height: 100dvh !important;
+    padding-top: env(safe-area-inset-top) !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+  
+  /* Full screen modals for terminal / settings */
+  .modal-overlay-mobile {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 100 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+  }
+
+  .modal-content-mobile {
+    width: 100% !important;
+    height: 92dvh !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 12px !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+
+  /* Header adjustments for notch */
+  header.mobile-header {
+    padding-top: calc(env(safe-area-inset-top) + 8px) !important;
+  }
+
+  /* Responsive code blocks scrolling */
+  pre, code {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Hero section adjustments */
+  .hero-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
