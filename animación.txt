@@ -1,0 +1,198 @@
+import React, { useEffect, useRef, useState } from 'react';
+
+// Secuencia simulando un análisis en bucle, todo en español
+const scriptSteps = [
+  { type: 'task', name: 'Inicializando motor de análisis heurístico', duration: 1200, resultType: 'success' },
+  { type: 'task', name: 'Resolviendo DNS y verificando firma SSL', duration: 800, resultType: 'error', errorMsg: 'Error: Emisor de certificado SSL inválido detectado. Cont...' },
+  { type: 'divider', text: 'Inspección profunda del DOM iniciada' },
+  { type: 'task', name: 'Realizando bypass de ofuscación de JavaScript', duration: 3500, resultType: 'success' },
+  { type: 'task', name: 'Extrayendo payloads de formularios ocultos', duration: 8200, resultType: 'success' }, 
+  { type: 'divider', text: 'Inspección profunda del DOM finalizada' },
+  { type: 'task', name: 'Consultando bases de datos de Threat Intelligence', duration: 1100, resultType: 'success' },
+  { type: 'task', name: 'Cotejando huella digital del servidor', duration: 900, resultType: 'error', errorMsg: 'Advertencia: Dominio registrado hace < 24 horas. Cont...' },
+  { type: 'divider', text: 'Operación concluida: Phishing confirmado' }
+];
+
+export default function MonitorSeguridad() {
+  const [logs, setLogs] = useState([]);
+  const logContainerRef = useRef(null);
+
+  // Efecto para controlar el scroll automático hacia abajo
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  useEffect(() => {
+    let isMounted = true;
+    let currentInterval = null;
+    let currentTimeout = null;
+
+    // Función auxiliar para esperar el tiempo de las pausas
+    const delay = (ms) => new Promise((resolve) => {
+      currentTimeout = setTimeout(resolve, ms);
+    });
+
+    async function runLoop() {
+      while (isMounted) {
+        // Limpiar logs al inicio del ciclo
+        setLogs([]);
+
+        for (let i = 0; i < scriptSteps.length; i++) {
+          if (!isMounted) return;
+          const step = scriptSteps[i];
+
+          if (step.type === 'divider') {
+            // Renderizar un divisor agregándolo al estado
+            setLogs((prev) => [...prev, { id: crypto.randomUUID(), type: 'divider', text: step.text }]);
+          } else if (step.type === 'task') {
+            // ID único para identificar la tarea que está corriendo activamente
+            const taskId = crypto.randomUUID();
+            let startTime = Date.now();
+
+            // 1. Agregar la tarea en estado "activo/escaneo"
+            setLogs((prev) => [
+              ...prev,
+              { id: taskId, type: 'active-task', name: step.name, seconds: '0.0' }
+            ]);
+
+            // 2. Intervalo para actualizar el contador de segundos en vivo (cada 100ms)
+            await new Promise((resolveTask) => {
+              currentInterval = setInterval(() => {
+                let elapsed = Date.now() - startTime;
+                let seconds = (elapsed / 1000).toFixed(1);
+
+                setLogs((prev) =>
+                  prev.map((log) =>
+                    log.id === taskId ? { ...log, seconds: seconds } : log
+                  )
+                );
+              }, 100);
+
+              // 3. Esperar la duración de la tarea para finalizarla
+              currentTimeout = setTimeout(() => {
+                clearInterval(currentInterval);
+
+                let totalSeconds = Math.round(step.duration / 1000);
+                if (totalSeconds === 0) totalSeconds = 1;
+
+                // Reemplazar la tarea activa por su resultado final (Log Final)
+                setLogs((prev) => {
+                  const filtered = prev.filter((log) => log.id !== taskId);
+                  let textContent = step.resultType === 'error' ? step.errorMsg : `Completado en ${totalSeconds}s`;
+                  return [
+                    ...filtered,
+                    { id: taskId, type: 'final-log', textContent: textContent }
+                  ];
+                });
+
+                resolveTask();
+              }, step.duration);
+            });
+          }
+
+          // Pausa entre acciones (300ms)
+          await delay(300);
+        }
+
+        // Esperar 3 segundos antes de reiniciar el bucle
+        await delay(3000);
+      }
+    }
+
+    runLoop();
+
+    // Limpieza al desmontar el componente para evitar memory leaks
+    return () => {
+      isMounted = false;
+      clearInterval(currentInterval);
+      clearTimeout(currentTimeout);
+    };
+  }, []);
+
+  return (
+    <div className="h-screen w-screen flex items-center justify-center bg-black select-none">
+      {/* Inyección de estilos CSS nativos requeridos */}
+      <style>{`
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          background-color: #000000;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .fade-in {
+          animation: fadeIn 0.3s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse-text {
+          animation: pulseText 1.5s infinite;
+        }
+        @keyframes pulseText {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+      `}</style>
+
+      {/* Contenedor puro sin bordes ni fondos extra */}
+      <div className="w-full max-w-4xl h-full p-8 flex flex-col">
+        
+        {/* Contenedor del Log */}
+        <div 
+          ref={logContainerRef}
+          className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-3 text-[14px] text-[#e0e0e0] tracking-wide font-sans"
+        >
+          {logs.map((log) => {
+            if (log.type === 'divider') {
+              const isAlert = log.text.includes('Phishing confirmado');
+              const textColor = isAlert ? 'text-red-400 font-bold' : 'text-[#888888]';
+              const lineColor = isAlert ? 'border-red-900' : 'border-[#444444]';
+
+              return (
+                <div key={log.id} className={`flex items-center fade-in my-1 ${textColor}`}>
+                  <div className={`w-6 border-t ${lineColor}`}></div>
+                  <span className="mx-3 text-[13px]">{log.text}</span>
+                  <div className={`w-6 border-t ${lineColor}`}></div>
+                </div>
+              );
+            }
+
+            if (log.type === 'active-task') {
+              return (
+                <div key={log.id} className="text-[#aaaaaa] flex items-center fade-in text-[13px]">
+                  <span className="pulse-text mr-2 text-[#444]">⟳</span> 
+                  [ESCANEO] {log.name}... 
+                  <span className="ml-2 font-mono text-white">{log.seconds}s</span>
+                </div>
+              );
+            }
+
+            if (log.type === 'final-log') {
+              return (
+                <div key={log.id} className="flex items-center py-0.5 px-1 -ml-1 fade-in font-bold text-[#e0e0e0]">
+                  <span>{log.textContent}</span>
+                  <svg className="w-3 h-3 text-[#666666] ml-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+              );
+            }
+
+            return null;
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

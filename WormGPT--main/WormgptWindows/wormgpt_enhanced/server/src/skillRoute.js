@@ -217,4 +217,56 @@ router.post('/skill', async (req, res) => {
   }
 });
 
+// ─── Create Skill from Text (Import) ─────────────────────────────────────────
+router.post('/skill/create', async (req, res) => {
+  const { name, description, content } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'El nombre de la skill es requerido.' });
+  }
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'El contenido de la skill es requerido.' });
+  }
+
+  try {
+    const safeName = name.trim().replace(/[<>:"/\\|?*]/g, '_');
+    const skillsBaseDir = path.resolve(path.join(process.cwd(), 'skills'));
+    const destSkillDir = path.join(skillsBaseDir, safeName);
+    await fsp.mkdir(destSkillDir, { recursive: true });
+
+    const skillMdContent = `---\nname: ${safeName}\ndescription: ${(description || '').trim()}\n---\n\n${content.trim()}\n`;
+
+    await fsp.writeFile(path.join(destSkillDir, 'SKILL.md'), skillMdContent, 'utf-8');
+
+    res.json({
+      success: true,
+      skill: { name: safeName, description: (description || '').trim(), content: skillMdContent }
+    });
+  } catch (err) {
+    console.error('[/api/skill/create] Error:', err.message);
+    res.status(500).json({ error: 'Error al guardar la skill en el servidor.', details: err.message });
+  }
+});
+
+// ─── Delete Skill ─────────────────────────────────────────────────────────────
+router.post('/skill/delete', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'El nombre de la skill es requerido.' });
+  }
+
+  try {
+    const safeName = name.trim().replace(/[<>:"/\\|?*]/g, '_');
+    const skillsBaseDir = path.resolve(path.join(process.cwd(), 'skills'));
+    const destSkillDir = path.join(skillsBaseDir, safeName);
+
+    if (fs.existsSync(destSkillDir)) {
+      await rimraf(destSkillDir);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[/api/skill/delete] Error:', err.message);
+    res.status(500).json({ error: 'Error al eliminar la skill del servidor.', details: err.message });
+  }
+});
+
 export default router;

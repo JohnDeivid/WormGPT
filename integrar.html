@@ -1,0 +1,2515 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Contratos — AI Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ============================================= */
+        /*  DESIGN TOKENS                                */
+        /* ============================================= */
+        :root {
+            --editor-bg: #09090b;
+            --grid-dot: rgba(255, 255, 255, 0.03);
+            --grid-dot-accent: rgba(255, 255, 255, 0.06);
+            --toolbar-bg: rgba(9, 9, 11, 0.95);
+            --toolbar-border: rgba(255, 255, 255, 0.04);
+            --chat-bg: rgba(9, 9, 11, 0.95);
+            --chat-border: rgba(255, 255, 255, 0.04);
+            --chat-input-bg: #121214;
+            --accent: #dc2626;
+            --accent-dim: rgba(220, 38, 38, 0.15);
+            --accent-glow: rgba(220, 38, 38, 0.3);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --msg-user-bg: rgba(220, 38, 38, 0.08);
+            --msg-ai-bg: #121214;
+            --snippet-bg: rgba(220, 38, 38, 0.05);
+            --snippet-border: var(--accent);
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            /* Contract page (kept from original) */
+            --primary-color: #000000;
+            --border-color: #000000;
+            --text-color: #000000;
+            --bg-page: #ffffff;
+            --placeholder-bg: rgba(251, 191, 36, 0.15);
+            --placeholder-border: rgba(251, 191, 36, 0.4);
+        }
+
+        /* ============================================= */
+        /*  RESET & BASE                                 */
+        /* ============================================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--editor-bg);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ============================================= */
+        /*  EDITOR LAYOUT                                */
+        /* ============================================= */
+        .editor-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* ============================================= */
+        /*  TOOLBAR                                      */
+        /* ============================================= */
+        .editor-toolbar {
+            height: 52px;
+            background: var(--toolbar-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--toolbar-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .toolbar-logo {
+            width: 28px;
+            height: 28px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--accent);
+        }
+
+        .toolbar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+        }
+
+        .toolbar-sep {
+            width: 1px;
+            height: 20px;
+            background: var(--toolbar-border);
+        }
+
+        .toolbar-badge {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .toolbar-center {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .zoom-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--toolbar-border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+        }
+
+        .zoom-level {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 44px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toolbar-btn {
+            height: 34px;
+            padding: 0 16px;
+            border-radius: 8px;
+            border: 1px solid var(--toolbar-border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.15s;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+        }
+
+        .toolbar-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #8b5cf6;
+            border-color: #8b5cf6;
+        }
+
+        .toolbar-btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .chat-toggle-btn {
+            position: relative;
+        }
+
+        .chat-toggle-btn .dot {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 7px;
+            height: 7px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        /* ============================================= */
+        /*  MAIN AREA (CANVAS + CHAT)                    */
+        /* ============================================= */
+        .editor-main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ============================================= */
+        /*  CANVAS (FIGMA-STYLE GRID)                    */
+        /* ============================================= */
+        .editor-canvas {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            background-color: var(--editor-bg);
+            background-image:
+                radial-gradient(circle, var(--grid-dot) 1px, transparent 1px);
+            background-size: 24px 24px;
+            transition: flex 0.3s ease;
+        }
+
+        .canvas-inner {
+            min-height: calc(100vh - 52px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 40px 120px 40px;
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+        }
+
+        /* ============================================= */
+        /*  CONTRACT PAGES (ORIGINAL STYLES PRESERVED)   */
+        /* ============================================= */
+        .contract-container {
+            width: 210mm;
+        }
+
+        .page {
+            background-color: var(--bg-page);
+            padding: 20mm 20mm 15mm 20mm;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            page-break-after: always;
+            page-break-inside: avoid;
+            overflow: hidden;
+            border-radius: 4px;
+            transition: box-shadow 0.2s;
+            color: var(--text-color);
+        }
+
+        .page:hover {
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(167, 139, 250, 0.15);
+        }
+
+        /* Highlight placeholders */
+        .page [data-placeholder] {
+            background: var(--placeholder-bg);
+            border-bottom: 2px dashed var(--placeholder-border);
+            padding: 0 3px;
+            border-radius: 2px;
+            cursor: text;
+            transition: background 0.15s;
+        }
+
+        .page [data-placeholder]:hover {
+            background: rgba(251, 191, 36, 0.25);
+        }
+
+        .page [data-placeholder]:focus {
+            outline: 2px solid var(--warning);
+            outline-offset: 1px;
+            background: rgba(251, 191, 36, 0.3);
+        }
+
+        /* Page header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary-color);
+            z-index: 1;
+        }
+
+        .header-line {
+            border-top: 1px solid var(--border-color);
+            margin-top: 8px;
+            margin-bottom: 30px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        /* Cover page */
+        .cover-content {
+            margin-top: auto;
+            margin-bottom: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            z-index: 1;
+        }
+
+        .cover-title {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            margin-bottom: 35px;
+        }
+
+        .cover-subtitle {
+            font-size: 10.5px;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            line-height: 2;
+        }
+
+        /* Clauses */
+        h1 {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .clause {
+            margin-bottom: 23px;
+        }
+
+        .clause-title {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .clause-text {
+            font-size: 11px;
+            text-align: justify;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        ul,
+        ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        /* Tables */
+        .page table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10px;
+        }
+
+        .page th,
+        .page td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 0;
+            text-align: left;
+        }
+
+        .page th {
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .page td {
+            font-weight: 400;
+        }
+
+        .align-right {
+            text-align: right;
+        }
+
+        .bold-row {
+            font-weight: 800;
+        }
+
+        /* Gantt */
+        .gantt {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            margin: 15px 0 0 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gantt-axis {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            height: 1px;
+            background: #000;
+        }
+
+        .gantt-tick {
+            position: absolute;
+            top: -2px;
+            width: 5px;
+            height: 5px;
+            background: #000;
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+
+        .gantt-tick-label {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 7px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #000;
+        }
+
+        .gantt-phases {
+            position: absolute;
+            top: 25px;
+            width: 100%;
+            height: 35px;
+        }
+
+        .gantt-phase {
+            position: absolute;
+            height: 100%;
+            background: #f0f0f0;
+            border-top: 2px solid #000;
+            border-right: 1px solid #fff;
+        }
+
+        .gantt-phase:last-child {
+            border-right: none;
+        }
+
+        .gantt-phase-text {
+            padding: 6px 8px;
+            font-size: 8px;
+            line-height: 1.3;
+            color: #444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gantt-phase-text strong {
+            color: #000;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .gantt-drop-lines {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            height: 135px;
+            pointer-events: none;
+        }
+
+        .gantt-drop {
+            position: absolute;
+            width: 1px;
+            height: 100%;
+            border-left: 1px dashed #999;
+        }
+
+        .gantt-drop-content {
+            position: absolute;
+            left: 4px;
+            width: 130px;
+            font-size: 8.5px;
+            line-height: 1.4;
+        }
+
+        .gantt-ms-title {
+            color: #000000;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .gantt-ms-desc {
+            color: #555;
+            font-style: italic;
+        }
+
+        /* Signatures */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto;
+            gap: 60px;
+            padding-bottom: 10px;
+        }
+
+        .signature-col {
+            width: 48%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .signature-line {
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .sig-row {
+            display: flex;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+
+        .sig-label {
+            font-weight: 700;
+            text-transform: uppercase;
+            width: 80px;
+        }
+
+        .sig-value {
+            font-weight: 400;
+        }
+
+        .sig-name {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 8px;
+            margin-bottom: 2px;
+        }
+
+        .sig-email {
+            font-size: 10px;
+            font-weight: 400;
+            text-transform: lowercase;
+        }
+
+        /* Footer */
+        .page-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666666;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .footer-left {
+            text-transform: none;
+        }
+
+        .footer-right {
+            font-weight: 700;
+        }
+
+        /* ============================================= */
+        /*  CHAT PANEL                                   */
+        /* ============================================= */
+        .chat-panel {
+            width: 320px;
+            min-width: 320px;
+            background: var(--chat-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-left: 1px solid var(--chat-border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease, min-width 0.3s ease, opacity 0.3s ease;
+            z-index: 50;
+        }
+
+        .chat-panel.hidden {
+            width: 0;
+            min-width: 0;
+            opacity: 0;
+            overflow: hidden;
+            border-left: none;
+        }
+
+        .chat-header {
+            height: 52px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--chat-border);
+            flex-shrink: 0;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-header-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .chat-model-badge {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            background: transparent;
+            padding: 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .chat-close-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .chat-close-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+        }
+
+        /* Chat messages area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        /* Welcome message */
+        .chat-welcome {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .chat-welcome-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 20px;
+        }
+
+        .chat-welcome h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            text-transform: none;
+            letter-spacing: -0.2px;
+        }
+
+        .chat-welcome p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        /* Quick actions */
+        .chat-quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .quick-action-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--chat-border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .quick-action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        /* Message bubbles */
+        .msg {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: 100%;
+            animation: msgSlideIn 0.25s ease;
+        }
+
+        @keyframes msgSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .msg-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .msg.user .msg-label {
+            color: var(--accent);
+        }
+
+        .msg.ai .msg-label {
+            color: var(--success);
+        }
+
+        .msg-bubble {
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.65;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .msg.user .msg-bubble {
+            background: var(--msg-user-bg);
+            border: 1px solid rgba(167, 139, 250, 0.1);
+        }
+
+        .msg.ai .msg-bubble {
+            background: var(--msg-ai-bg);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .msg-bubble strong {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .msg-bubble ul,
+        .msg-bubble ol {
+            margin: 8px 0;
+            padding-left: 18px;
+        }
+
+        .msg-bubble li {
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .msg-bubble code {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        /* Snippet reference block */
+        .msg-snippet {
+            background: var(--snippet-bg);
+            border-left: 3px solid var(--snippet-border);
+            border-radius: 4px 8px 8px 4px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            max-height: 80px;
+            overflow: hidden;
+            position: relative;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .msg-snippet::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 24px;
+            background: linear-gradient(transparent, rgba(30, 30, 46, 0.9));
+        }
+
+        .msg-snippet-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--accent);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 14px 16px;
+            background: var(--msg-ai-bg);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        /* Proposed changes block */
+        .msg-changes {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 8px;
+        }
+
+        .msg-changes-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--warning);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .change-item {
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .change-before {
+            background: rgba(248, 113, 113, 0.08);
+            border-left: 3px solid var(--danger);
+            color: var(--danger);
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .change-after {
+            background: rgba(74, 222, 128, 0.08);
+            border-left: 3px solid var(--success);
+            color: var(--success);
+        }
+
+        .change-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .change-btn {
+            flex: 1;
+            padding: 8px 0;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .change-btn.approve {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--success);
+        }
+
+        .change-btn.approve:hover {
+            background: rgba(74, 222, 128, 0.25);
+        }
+
+        .change-btn.reject {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--danger);
+        }
+
+        .change-btn.reject:hover {
+            background: rgba(248, 113, 113, 0.2);
+        }
+
+        /* Chat input area */
+        .chat-input-area {
+            padding: 16px 20px 20px;
+            border-top: 1px solid var(--chat-border);
+            flex-shrink: 0;
+        }
+
+        .chat-input-wrapper {
+            background: var(--chat-input-bg);
+            border: 1px solid var(--chat-border);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input-wrapper:focus-within {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: #18181b;
+        }
+
+        /* Pending snippet in input */
+        .input-snippet {
+            display: none;
+            margin: 10px 12px 0;
+            background: var(--snippet-bg);
+            border-left: 3px solid var(--snippet-border);
+            border-radius: 4px 8px 8px 4px;
+            padding: 8px 12px;
+            font-size: 11px;
+            line-height: 1.4;
+            color: var(--text-secondary);
+            max-height: 60px;
+            overflow: hidden;
+            position: relative;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .input-snippet.visible {
+            display: block;
+        }
+
+        .input-snippet-close {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 10px 12px;
+        }
+
+        #chatInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+            resize: none;
+            max-height: 120px;
+            min-height: 22px;
+        }
+
+        #chatInput::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .send-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ============================================= */
+        /*  SELECTION POPUP                              */
+        /* ============================================= */
+        .selection-popup {
+            position: fixed;
+            display: none;
+            z-index: 200;
+            animation: popupIn 0.15s ease;
+        }
+
+        .selection-popup.visible {
+            display: flex;
+        }
+
+        @keyframes popupIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .popup-btn {
+            height: 30px;
+            padding: 0 12px;
+            border-radius: 8px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 16px rgba(167, 139, 250, 0.4);
+            transition: all 0.15s;
+        }
+
+        .popup-btn:hover {
+            background: #8b5cf6;
+            transform: translateY(-1px);
+        }
+
+        /* ============================================= */
+        /*  SCROLLBAR FOR CANVAS                         */
+        /* ============================================= */
+        .editor-canvas::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .editor-canvas::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .editor-canvas::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .editor-canvas::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ============================================= */
+        /*  PRINT STYLES                                 */
+        /* ============================================= */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        @media print {
+            body {
+                background-color: #fff;
+                overflow: visible;
+                height: auto;
+            }
+
+            .editor-toolbar,
+            .chat-panel,
+            .selection-popup {
+                display: none !important;
+            }
+
+            .editor-layout {
+                height: auto;
+            }
+
+            .editor-main {
+                overflow: visible;
+            }
+
+            .editor-canvas {
+                overflow: visible;
+                background: #fff !important;
+                background-image: none !important;
+            }
+
+            .canvas-inner {
+                padding: 0 !important;
+                transform: none !important;
+            }
+
+            .contract-container {
+                width: 100%;
+            }
+
+            .page {
+                margin: 0;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 15mm;
+                height: 297mm;
+                max-height: 297mm;
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+
+            .page:last-child {
+                page-break-after: auto;
+            }
+
+            .page [data-placeholder] {
+                background: none;
+                border-bottom: none;
+            }
+
+            .page-footer {
+                border-top: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="editor-layout">
+
+        <!-- TOOLBAR -->
+        <div class="editor-toolbar">
+            <div class="toolbar-left">
+                <div class="toolbar-logo">C</div>
+                <span class="toolbar-title">Contrato de Servicios Profesionales</span>
+                <div class="toolbar-sep"></div>
+                <span class="toolbar-badge">Editor</span>
+            </div>
+
+            <div class="toolbar-center">
+                <button class="zoom-btn" onclick="changeZoom(-10)" title="Alejar">−</button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button class="zoom-btn" onclick="changeZoom(10)" title="Acercar">+</button>
+            </div>
+
+            <div class="toolbar-right">
+                <button class="toolbar-btn" onclick="window.print()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Guardar PDF
+                </button>
+                <button class="toolbar-btn chat-toggle-btn" id="chatToggle" onclick="toggleChat()">
+                    <span class="dot"></span>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    AI Chat
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN -->
+        <div class="editor-main">
+
+            <!-- CANVAS -->
+            <div class="editor-canvas" id="editorCanvas">
+                <div class="canvas-inner" id="canvasInner">
+                    <div class="contract-container" id="contractContainer">
+
+                        <!-- PÁGINA 1 -->
+                        <div class="page" contenteditable="true">
+                            <div class="page-header">
+                                <div>Contrato de Servicios Profesionales</div>
+                                <div><span data-placeholder="fecha" contenteditable="true">[Día / Mes / Año]</span>
+                                </div>
+                            </div>
+                            <div class="header-line"></div>
+
+                            <div class="cover-content">
+                                <div class="cover-title">Contrato de<br>Prestación de Servicios<br>profesionales
+                                    independientes</div>
+                                <div class="cover-subtitle">
+                                    <strong>Contratante:</strong> <span data-placeholder="cliente-nombre"
+                                        contenteditable="true">[Nombre o
+                                        Razón Social del Cliente]</span><br>
+                                    <strong>Contratista:</strong> <span data-placeholder="diseñador-nombre"
+                                        contenteditable="true">[Tu
+                                        Nombre / Nombre de tu Estudio]</span><br>
+                                    <strong>Fecha de Emisión:</strong> <span data-placeholder="fecha-emision"
+                                        contenteditable="true">[Día
+                                        / Mes / Año]</span>
+                                </div>
+                            </div>
+
+                            <div class="page-footer">
+                                <div class="footer-left">Contrato de Servicios Independientes de Diseño y Desarrollo Web
+                                </div>
+                                <div class="footer-right">Página 1 de 7</div>
+                            </div>
+                        </div>
+
+                        <!-- PÁGINA 2 -->
+                        <div class="page" contenteditable="true">
+                            <div class="page-header">
+                                <div>Contrato de Servicios Profesionales</div>
+                                <div><span data-placeholder="fecha">[Día / Mes / Año]</span></div>
+                            </div>
+                            <div class="header-line"></div>
+
+                            <h1>1. Objeto del Contrato y Comparecencia</h1>
+
+                            <p class="clause-text" style="margin-bottom: 20px; line-height: 1.6;">
+                                En la ciudad de Santo Domingo, República Dominicana, al <span
+                                    data-placeholder="fecha-contrato">[Día /
+                                    Mes / Año]</span>, intervienen por una parte <strong><span
+                                        data-placeholder="cliente-razon">[Nombre o
+                                        Razón Social del Cliente]</span></strong>, con domicilio fiscal en <span
+                                    data-placeholder="cliente-direccion">[Dirección del Cliente]</span>, Registro
+                                Nacional de
+                                Contribuyente / Cédula No. <span data-placeholder="cliente-rnc">[000-0000000-0]</span>,
+                                legítimamente
+                                representada por su representante legal <span data-placeholder="cliente-rep">[Nombre del
+                                    Representante]</span> (en adelante, el "Cliente"); y por la otra parte <strong><span
+                                        data-placeholder="diseñador-razon">[Tu Nombre / Nombre de tu
+                                        Estudio]</span></strong>, con domicilio
+                                profesional en <span data-placeholder="diseñador-direccion">[Tu Dirección]</span>,
+                                Cédula No. <span data-placeholder="diseñador-cedula">[000-0000000-0]</span> (en
+                                adelante, el "Diseñador"). Ambas partes
+                                se reconocen de mutuo acuerdo capacidad legal suficiente para obligarse y suscribir este
+                                <strong>Contrato de Prestación de Servicios Profesionales Independientes</strong> bajo
+                                las siguientes
+                                cláusulas:
+                            </p>
+
+                            <div class="clause">
+                                <div class="clause-title">1.1. Alcance de los Servicios</div>
+                                <div class="clause-text">
+                                    El Diseñador desarrollará e implementará el proyecto digital de acuerdo con las
+                                    siguientes fases de
+                                    trabajo técnico y creativo previamente aceptadas:
+                                    <ul>
+                                        <li><strong>Fase 1: Inv. de Mercado y Estrategia SEO</strong>: Análisis del
+                                            mercado objetivo,
+                                            estudio de competidores directos y definición de la arquitectura web con
+                                            estrategia SEO inicial
+                                            (jerarquía, palabras clave y estructura de navegación).</li>
+                                        <li><strong>Fase 2: Propuesta de Diseño y Aprobación</strong>: Creación del
+                                            diseño visual (UI) y
+                                            experiencia de usuario (UX). Involucra la presentación del prototipo
+                                            interactivo con la propuesta
+                                            cromática y tipográfica, incluyendo las rondas de revisión hasta su
+                                            aprobación formal.</li>
+                                        <li><strong>Fase 3: Desarrollo y Maquetación</strong>: Programación e
+                                            implementación del diseño
+                                            visual aprobado en la plataforma, configuración de la arquitectura
+                                            interactiva, animaciones y
+                                            optimización multiplataforma.</li>
+                                        <li><strong>Fase 4: Pruebas (QA) y Lanzamiento</strong>: Fase de prueba en un
+                                            entorno seguro
+                                            (staging), optimización técnica de rendimiento, vinculación del dominio
+                                            personalizado y el
+                                            lanzamiento oficial del proyecto al público.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="clause" style="margin-bottom: 0;">
+                                <div class="clause-title">1.2. Cronograma Estimado</div>
+                                <div class="clause-text">
+                                    El cronograma de ejecución consta de 8 semanas, contadas a partir del pago del
+                                    anticipo y la recepción
+                                    del material inicial del Cliente:
+                                </div>
+
+                                <!-- Gráfica Gantt -->
+                                <div class="gantt">
+                                    <div class="gantt-axis">
+                                        <div class="gantt-tick" style="left: 0%;"><span class="gantt-tick-label">SEM
+                                                1</span></div>
+                                        <div class="gantt-tick" style="left: 14.3%;"><span class="gantt-tick-label">SEM
+                                                2</span></div>
+                                        <div class="gantt-tick" style="left: 28.6%;"><span class="gantt-tick-label">SEM
+                                                3</span></div>
+                                        <div class="gantt-tick" style="left: 42.9%;"><span class="gantt-tick-label">SEM
+                                                4</span></div>
+                                        <div class="gantt-tick" style="left: 57.1%;"><span class="gantt-tick-label">SEM
+                                                5</span></div>
+                                        <div class="gantt-tick" style="left: 71.4%;"><span class="gantt-tick-label">SEM
+                                                6</span></div>
+                                        <div class="gantt-tick" style="left: 85.7%;"><span class="gantt-tick-label">SEM
+                                                7</span></div>
+                                        <div class="gantt-tick" style="left: 100%;"><span class="gantt-tick-label">SEM
+                                                8</span></div>
+                                    </div>
+                                    <div class="gantt-phases">
+                                        <div class="gantt-phase" style="left: 0%; width: 25%;">
+                                            <div class="gantt-phase-text"><strong>FASE 1</strong><br>Inv. &amp; SEO
+                                            </div>
+                                        </div>
+                                        <div class="gantt-phase" style="left: 25%; width: 25%;">
+                                            <div class="gantt-phase-text"><strong>FASE 2</strong><br>Diseño UI/UX</div>
+                                        </div>
+                                        <div class="gantt-phase" style="left: 50%; width: 25%;">
+                                            <div class="gantt-phase-text"><strong>FASE 3</strong><br>Desarrollo</div>
+                                        </div>
+                                        <div class="gantt-phase" style="left: 75%; width: 25%;">
+                                            <div class="gantt-phase-text"><strong>FASE 4</strong><br>Pruebas &amp; Lanz.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="gantt-drop-lines">
+                                        <div class="gantt-drop" style="left: 0%;">
+                                            <div class="gantt-drop-content" style="top: 65px;"><span
+                                                    class="gantt-ms-title">Inicio</span><br><span
+                                                    class="gantt-ms-desc">Kickoff y Material</span>
+                                            </div>
+                                        </div>
+                                        <div class="gantt-drop" style="left: 25%;">
+                                            <div class="gantt-drop-content" style="top: 100px;"><span
+                                                    class="gantt-ms-title">Hito
+                                                    1</span><br><span class="gantt-ms-desc">Estrategia SEO</span></div>
+                                        </div>
+                                        <div class="gantt-drop" style="left: 50%;">
+                                            <div class="gantt-drop-content" style="top: 65px;"><span
+                                                    class="gantt-ms-title">Hito
+                                                    2</span><br><span class="gantt-ms-desc">Aprobación Diseño</span>
+                                            </div>
+                                        </div>
+                                        <div class="gantt-drop" style="left: 75%;">
+                                            <div class="gantt-drop-content" style="top: 100px;"><span
+                                                    class="gantt-ms-title">Hito
+                                                    3</span><br><span class="gantt-ms-desc">Entorno de Pruebas</span>
+                                            </div>
+                                        </div>
+                                        <div class="gantt-drop"
+                                            style="left: auto; right: 0; border-left: none; border-right: 1px dashed #999;">
+                                            <div class="gantt-drop-content"
+                                                style="top: 65px; left: auto; right: 4px; text-align: right; width: 100px;">
+                                                <span class="gantt-ms-title">Entrega Final</span><br><span
+                                                    class="gantt-ms-desc">Lanzamiento
+                                                    Oficial</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="page-footer">
+                                <div class="footer-left">Contrato de Servicios Independientes de Diseño y Desarrollo Web
+                                </div>
+                                <div class="footer-right">Página 2 de 7</div>
+                            </div>
+                        </div>
+
+                        <!-- PÁGINA 3 -->
+                        <div class="page" contenteditable="true">
+                            <div class="page-header">
+                                <div>Contrato de Servicios Profesionales</div>
+                                <div><span data-placeholder="fecha">[Día / Mes / Año]</span></div>
+                            </div>
+                            <div class="header-line"></div>
+
+                            <h1>2. Presupuesto y Plan de Pagos</h1>
+
+                            <p class="clause-text" style="margin-bottom: 20px;">Los precios listados a continuación
+                                representan el
+                                presupuesto consolidado y acordado para el desarrollo integral del proyecto. Cualquier
+                                servicio
+                                adicional no descrito explícitamente en el Alcance de Servicios será objeto de una
+                                tarificación
+                                independiente.</p>
+
+                            <div class="clause">
+                                <div class="clause-title">2.1. Desglose Financiero</div>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Descripción del Servicio</th>
+                                            <th class="align-right">Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Investigación de Mercado, SEO y Propuesta de Diseño (Fases 1 y 2)</td>
+                                            <td class="align-right"><span data-placeholder="monto-f1f2">$[Monto
+                                                    F1-F2]</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Desarrollo, Maquetación y Programación Front-End (Fase 3)</td>
+                                            <td class="align-right"><span data-placeholder="monto-dev">$[Monto
+                                                    Desarrollo]</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Fase de Pruebas, QA, Conexión de Dominio y Lanzamiento (Fase 4)</td>
+                                            <td class="align-right"><span data-placeholder="monto-deploy">$[Monto
+                                                    Despliegue]</span></td>
+                                        </tr>
+                                        <tr class="bold-row">
+                                            <td>Total Presupuesto (Neto)</td>
+                                            <td class="align-right"><span data-placeholder="monto-total">$[Monto
+                                                    Total]</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="clause" style="margin-bottom: 0;">
+                                <div class="clause-title">2.2. Calendario de Pagos</div>
+                                <div class="clause-text">
+                                    El Cliente se compromete a abonar los honorarios del Diseñador conforme al siguiente
+                                    plan de hitos
+                                    financieros obligatorios:
+                                    <ul>
+                                        <li><strong>50% de Anticipo (<span data-placeholder="monto-anticipo">$[Monto
+                                                    Anticipo]</span>)</strong>: Requerido para reservar la
+                                            disponibilidad del Diseñador e iniciar
+                                            formalmente el proyecto.</li>
+                                        <li><strong>25% al Aprobar Diseño (<span data-placeholder="monto-hito2">$[Monto
+                                                    Hito
+                                                    2]</span>)</strong>: Facturado tras la aprobación formal de la Fase
+                                            2 (diseño visual) y previo
+                                            al inicio del desarrollo web.</li>
+                                        <li><strong>25% a la Entrega Final (<span data-placeholder="monto-hito3">$[Monto
+                                                    Hito
+                                                    3]</span>)</strong>: Pagadero tras la aprobación en la fase de
+                                            pruebas, previo a la conexión
+                                            del dominio final y traspaso de propiedad del proyecto.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="page-footer">
+                                <div class="footer-left">Contrato de Servicios Independientes de Diseño y Desarrollo Web
+                                </div>
+                                <div class="footer-right">Página 3 de 7</div>
+                            </div>
+                        </div>
+
+                        <!-- PÁGINA 4 -->
+                        <div class="page" contenteditable="true">
+                            <div class="page-header">
+                                <div>Contrato de Servicios Profesionales</div>
+                                <div><span data-placeholder="fecha">[Día / Mes / Año]</span></div>
+                            </div>
+                            <div class="header-line"></div>
+
+                            <h1>3. Términos y Condiciones Básicos</h1>
+
+                            <div class="clause">
+                                <div class="clause-title">3.1. Vigencia del Contrato</div>
+                                <div class="clause-text">El presente contrato entra en vigor y resulta plenamente
+                                    vinculante a partir de
+                                    la fecha de su firma por ambas partes, manteniéndose vigente hasta la entrega
+                                    definitiva de los
+                                    servicios descritos o la rescisión formal del mismo conforme a los mecanismos
+                                    previstos en este
+                                    documento.</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">3.2. Modificaciones al Alcance del Proyecto</div>
+                                <div class="clause-text">El Diseñador documentará y notificará cualquier solicitud del
+                                    Cliente que
+                                    exceda el alcance inicial del proyecto. Las modificaciones menores solicitadas fuera
+                                    del alcance
+                                    acordado serán tarificadas a la tarifa de <strong>$75.00 por hora</strong>. Las
+                                    modificaciones
+                                    sustanciales que alteren el tiempo o presupuesto del proyecto en un <strong>15% o
+                                        más</strong>
+                                    requerirán la redacción de una adenda complementaria firmada por ambas partes antes
+                                    de que el trabajo
+                                    comience.</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">3.3. Retrasos y Suspensión</div>
+                                <div class="clause-text">Si el Cliente no entrega el material requerido (textos,
+                                    imágenes, accesos) o
+                                    demora las aprobaciones por más de diez (10) días hábiles consecutivos, el proyecto
+                                    podrá ser puesto
+                                    en suspensión. En tal caso, el Diseñador aplicará un recargo fijo por suspensión de
+                                    <strong>$50.00 USD
+                                        por cada semana de retraso</strong> para compensar la reserva de su agenda
+                                    bloqueada, y los plazos
+                                    de entrega se reprogramarán según su disponibilidad.
+                                </div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">3.4. Pruebas y Aceptación</div>
+                                <div class="clause-text">El Diseñador notificará al Cliente cuando cada entregable esté
+                                    listo para
+                                    revisión. El Cliente dispondrá de un plazo de <strong>siete (7) días
+                                        hábiles</strong> para revisar los
+                                    entregables y notificar por escrito cualquier objeción o corrección necesaria
+                                    respecto al cumplimiento
+                                    de las especificaciones. En ausencia de dicha notificación, los entregables se
+                                    considerarán aceptados
+                                    de forma definitiva, habilitando la facturación del hito correspondiente.</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">3.5. Derecho de Subsanación</div>
+                                <div class="clause-text">Si el Cliente notifica desviaciones justificadas en los
+                                    entregables dentro del
+                                    plazo de aceptación, el Diseñador tendrá derecho a subsanar y corregir dicho
+                                    entregable en un plazo
+                                    comercial razonable sin que esto se considere un incumplimiento contractual.</div>
+                            </div>
+
+                            <div class="clause" style="margin-bottom: 0;">
+                                <div class="clause-title">3.6. Promoción y Portafolio</div>
+                                <div class="clause-text">El Cliente acepta que el Diseñador pueda incluir un enlace de
+                                    atribución
+                                    discreto en el pie de página del sitio web final (ej. <em>"Diseño y desarrollo por
+                                        [Tu Nombre]"</em>),
+                                    y utilizar capturas de pantalla, fragmentos de diseño y descripciones del sitio web
+                                    para fines de
+                                    portafolio profesional y redes sociales, una vez que el sitio sea lanzado
+                                    oficialmente al público.
+                                </div>
+                            </div>
+
+                            <div class="page-footer">
+                                <div class="footer-left">Contrato de Servicios Independientes de Diseño y Desarrollo Web
+                                </div>
+                                <div class="footer-right">Página 4 de 7</div>
+                            </div>
+                        </div>
+
+                        <!-- PÁGINA 5 -->
+                        <div class="page" contenteditable="true">
+                            <div class="page-header">
+                                <div>Contrato de Servicios Profesionales</div>
+                                <div><span data-placeholder="fecha">[Día / Mes / Año]</span></div>
+                            </div>
+                            <div class="header-line"></div>
+
+                            <h1>4. Propiedad Intelectual y Confidencialidad</h1>
+
+                            <div class="clause">
+                                <div class="clause-title">4.1. Cesión de Derechos sobre el Trabajo Final</div>
+                                <div class="clause-text">Sujeto al cumplimiento y al <strong>pago completo</strong> de
+                                    todas las tarifas
+                                    y facturas por parte del Cliente, el Diseñador cede de forma exclusiva y definitiva
+                                    al Cliente todos
+                                    los derechos de propiedad intelectual, derechos de autor y marcas registradas sobre
+                                    los
+                                    <strong>Trabajos Finales</strong> creados específicamente para este proyecto (el
+                                    diseño visual del
+                                    sitio web y el contenido desarrollado específicamente para el Cliente).
+                                </div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">4.2. Reserva de Obras Preliminares</div>
+                                <div class="clause-text">El Diseñador retiene todos los derechos de propiedad
+                                    intelectual, autoría y
+                                    propiedad sobre las <strong>Obras Preliminares</strong> (bocetos no seleccionados,
+                                    propuestas de
+                                    diseño alternativas rechazadas y archivos de trabajo previos al diseño definitivo).
+                                    El Cliente se
+                                    compromete a no utilizar, publicar ni copiar ninguna de estas obras preliminares, y
+                                    a devolverlas o
+                                    destruirlas si están en su posesión, en un plazo de treinta (30) días tras el cierre
+                                    del proyecto.
+                                </div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">4.3. Herramientas del Diseñador (Designer Tools)</div>
+                                <div class="clause-text">Las partes reconocen que el Diseñador utiliza y desarrolla
+                                    herramientas y
+                                    metodologías de diseño y desarrollo preexistentes en su práctica profesional
+                                    (incluyendo, sin
+                                    limitación, fragmentos de código, plantillas, components reutilizables y librerías).
+                                    El Diseñador
+                                    retiene la propiedad intelectual exclusiva de las "Herramientas del Diseñador". El
+                                    Diseñador otorga al
+                                    Cliente una licencia no exclusiva, perpetua, transferible únicamente con el sitio
+                                    web, y libre de
+                                    regalías para utilizar las Herramientas del Diseñador integradas en el sitio web
+                                    final para su normal
+                                    funcionamiento.</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">4.4. Materiales de Terceros</div>
+                                <div class="clause-text">El Cliente reconoce que el sitio web puede incorporar
+                                    materiales de terceros
+                                    (como tipografías web bajo licencia, imágenes de stock, componentes o plugins). El
+                                    Cliente será el
+                                    único responsable de adquirir cualquier tarifa de licencia necesaria para dichos
+                                    recursos a su nombre,
+                                    y el Diseñador no asumirá responsabilidad por infracción de derechos sobre recursos
+                                    provistos por el
+                                    Cliente.</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">4.5. Garantía de Originalidad del Diseñador</div>
+                                <div class="clause-text">El Diseñador garantiza que, a su leal saber y entender, todos
+                                    los Trabajos
+                                    Finales creados para el Cliente son originales y no infringen los derechos de
+                                    propiedad intelectual de
+                                    terceros. Esta garantía se limita "al mejor conocimiento" del Diseñador, dado que
+                                    este no realiza
+                                    búsquedas de marcas registradas o patentes, siendo esto responsabilidad del Cliente.
+                                </div>
+                            </div>
+
+                            <div class="clause" style="margin-bottom: 0;">
+                                <div class="clause-title">4.6. Acuerdo de Confidencialidad Cruzado</div>
+                                <div class="clause-text">Ambas partes se obligan a mantener estricta reserva y
+                                    confidencialidad sobre
+                                    toda la información comercial, técnica, estratégica, contraseñas o modelos de
+                                    negocio compartidos
+                                    durante la ejecución del proyecto. Ninguna de las partes podrá divulgar, transferir
+                                    ni explotar dicha
+                                    información sin la autorización expresa y por escrito de la otra parte.</div>
+                            </div>
+
+                            <div class="page-footer">
+                                <div class="footer-left">Contrato de Servicios Independientes de Diseño y Desarrollo Web
+                                </div>
+                                <div class="footer-right">Página 5 de 7</div>
+                            </div>
+                        </div>
+
+                        <!-- PÁGINA 6 -->
+                        <div class="page" contenteditable="true">
+                            <div class="page-header">
+                                <div>Contrato de Servicios Profesionales</div>
+                                <div><span data-placeholder="fecha">[Día / Mes / Año]</span></div>
+                            </div>
+                            <div class="header-line"></div>
+
+                            <h1>5. Servicios Web e Interactivos</h1>
+
+                            <div class="clause">
+                                <div class="clause-title">5.1. Periodo de Garantía Técnica</div>
+                                <div class="clause-text">
+                                    Tras la entrega final del sitio web y el pago correspondiente, se inicia un
+                                    <strong>Periodo de
+                                        Garantía de treinta (30) días naturales</strong>. Durante este tiempo, el
+                                    Diseñador corregirá de
+                                    forma gratuita cualquier error de visualización o fallo técnico directamente
+                                    derivado de su entrega.
+                                    Esta garantía no cubre problemas causados por el servicio de alojamiento,
+                                    modificaciones realizadas
+                                    por el Cliente o terceros ajenos al proyecto, ni actualizaciones mayores en
+                                    plataformas de terceros
+                                    posteriores al lanzamiento.
+                                </div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">5.2. Mantenimiento y Soporte Post-Garantía</div>
+                                <div class="clause-text">Una vez finalizado el periodo de garantía, el Cliente podrá
+                                    contratar un plan
+                                    de soporte y actualización técnica opcional. Si se pacta, el plan tendrá una
+                                    duración mínima de doce
+                                    (12) meses a razón de una tarifa fija mensual de <strong>$150.00 al mes</strong>, la
+                                    cual incluirá dos
+                                    (2) horas de mantenimiento preventivo, actualizaciones de contenido básico y
+                                    monitorización técnica
+                                    del sitio.</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">5.3. Compatibilidad de Navegadores</div>
+                                <div class="clause-text">El Diseñador se compromete a que el sitio web funcione y se
+                                    visualice de forma
+                                    consistente en las últimas dos (2) versiones estables y oficiales de los navegadores
+                                    más utilizados:
+                                    Google Chrome, Apple Safari, Mozilla Firefox y Microsoft Edge. No se garantiza
+                                    compatibilidad con
+                                    versiones obsoletas de navegadores.</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">5.4. Cumplimiento de Leyes y Accesibilidad</div>
+                                <div class="clause-text">El Diseñador pondrá sus mejores esfuerzos comerciales para que
+                                    el sitio cumpla
+                                    con estándares de accesibilidad actuales. Sin embargo, el Cliente reconoce y acepta
+                                    que él es el único
+                                    responsable de asegurar el cumplimiento legal general del sitio web (incluyendo
+                                    normativas de
+                                    accesibilidad ADA, regulaciones de protección de datos como RGPD/CCPA, políticas de
+                                    cookies,
+                                    privacidad y veracidad del contenido).</div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">5.5. Independencia Laboral</div>
+                                <div class="clause-text">Las partes declaran expresamente que la relación jurídica que
+                                    las une es
+                                    exclusivamente de carácter civil y comercial, actuando el Diseñador como un
+                                    contratista independiente.
+                                    El presente acuerdo no genera relación laboral, vínculo de subordinación jurídica ni
+                                    de dependencia de
+                                    ningún tipo entre el Cliente y el Diseñador, quedando exentos del pago de
+                                    prestaciones o de seguridad
+                                    social reguladas por el Código de Trabajo de la República Dominicana.</div>
+                            </div>
+
+                            <div class="clause" style="margin-bottom: 0;">
+                                <div class="clause-title">5.6. Limitación de Responsabilidad y Ley Aplicable</div>
+                                <div class="clause-text">El Diseñador provee sus servicios "tal cual". En ninguna
+                                    circunstancia la
+                                    responsabilidad del Diseñador excederá el monto total de los honorarios pagados por
+                                    el Cliente bajo
+                                    este acuerdo. Este Contrato se regirá e interpretará conforme a las leyes de la
+                                    <strong>República
+                                        Dominicana</strong>. Para cualquier controversia que no pueda ser resuelta de
+                                    mutuo acuerdo, las
+                                    partes se someten expresamente a la jurisdicción exclusiva de los tribunales de
+                                    <strong>Santo
+                                        Domingo</strong>, renunciando a cualquier otro fuero.
+                                </div>
+                            </div>
+
+                            <div class="page-footer">
+                                <div class="footer-left">Contrato de Servicios Independientes de Diseño y Desarrollo Web
+                                </div>
+                                <div class="footer-right">Página 6 de 7</div>
+                            </div>
+                        </div>
+
+                        <!-- PÁGINA 7 -->
+                        <div class="page" contenteditable="true">
+                            <div class="page-header">
+                                <div>Contrato de Servicios Profesionales</div>
+                                <div><span data-placeholder="fecha">[Día / Mes / Año]</span></div>
+                            </div>
+                            <div class="header-line"></div>
+
+                            <h1>6. Aceptación y Firmas</h1>
+
+                            <div class="clause">
+                                <div class="clause-title">Rescisión y Terminación del Acuerdo:</div>
+                                <div class="clause-text">
+                                    Cualquiera de las partes puede rescindir este contrato mediante notificación por
+                                    escrito con al menos
+                                    cinco (5) días laborables de anticipación. En caso de rescisión unilateral por parte
+                                    del Cliente sin
+                                    mediar incumplimiento por parte del Diseñador, el Cliente se compromete a abonar el
+                                    100% del costo de
+                                    la fase del proyecto que se encuentre activa al momento de la notificación de
+                                    rescisión, además de
+                                    saldar en su totalidad los hitos completados y previamente liquidados, como
+                                    compensación por el tiempo
+                                    y recursos de agenda reservados.
+                                </div>
+                            </div>
+
+                            <div class="clause">
+                                <div class="clause-title">Aceptación de Términos:</div>
+                                <div class="clause-text">
+                                    Al firmar a continuación, las Partes de mutuo acuerdo aceptan que han leído,
+                                    entendido y se
+                                    comprometen a cumplir los términos enumerados en este contrato de servicios
+                                    independientes de diseño y
+                                    desarrollo web.
+                                </div>
+                            </div>
+
+                            <div class="signature-section">
+                                <div class="signature-col">
+                                    <div class="signature-line"></div>
+                                    <div class="sig-row">
+                                        <div class="sig-label">Firma</div>
+                                    </div>
+                                    <div class="sig-row" style="margin-top: 10px;">
+                                        <div class="sig-label">Fecha</div>
+                                        <div class="sig-value"><span data-placeholder="firma-fecha-cliente">[Día / Mes /
+                                                Año]</span></div>
+                                    </div>
+                                    <div class="sig-row">
+                                        <div class="sig-label">Cédula / RNC</div>
+                                        <div class="sig-value"><span
+                                                data-placeholder="firma-cedula-cliente">[000-0000000-0]</span></div>
+                                    </div>
+                                    <div class="sig-name"><span data-placeholder="firma-nombre-cliente">[Nombre y
+                                            Apellido Cliente]</span>
+                                    </div>
+                                    <div class="sig-email"><span
+                                            data-placeholder="firma-email-cliente">[correo@dominiodelcliente.com]</span>
+                                    </div>
+                                </div>
+
+                                <div class="signature-col">
+                                    <div class="signature-line"></div>
+                                    <div class="sig-row">
+                                        <div class="sig-label">Firma</div>
+                                    </div>
+                                    <div class="sig-row" style="margin-top: 10px;">
+                                        <div class="sig-label">Fecha</div>
+                                        <div class="sig-value"><span data-placeholder="firma-fecha-diseñador">[Día / Mes
+                                                / Año]</span></div>
+                                    </div>
+                                    <div class="sig-row">
+                                        <div class="sig-label">Cédula / RNC</div>
+                                        <div class="sig-value"><span
+                                                data-placeholder="firma-cedula-diseñador">[000-0000000-0]</span></div>
+                                    </div>
+                                    <div class="sig-name"><span data-placeholder="firma-nombre-diseñador">[Tu Nombre y
+                                            Apellido]</span>
+                                    </div>
+                                    <div class="sig-email"><span
+                                            data-placeholder="firma-email-diseñador">[hola@tu-estudio.com]</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="page-footer">
+                                <div class="footer-left">Acuerdo Legal de Servicios Profesionales</div>
+                                <div class="footer-right">Cierre</div>
+                            </div>
+                        </div>
+
+                    </div><!-- /contract-container -->
+                </div><!-- /canvas-inner -->
+            </div><!-- /editor-canvas -->
+
+            <!-- CHAT PANEL -->
+            <div class="chat-panel" id="chatPanel">
+                <div class="chat-header">
+                    <div class="chat-header-left">
+                        <span class="chat-header-title">AI Assistant</span>
+                        <span class="chat-model-badge">Gemini 2.5 Flash</span>
+                    </div>
+                    <button class="chat-close-btn" onclick="toggleChat()" title="Cerrar chat">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-welcome">
+                        <div class="chat-welcome-icon">✦</div>
+                        <h3>Asistente de Contratos</h3>
+                        <p>Selecciona texto del contrato para editarlo, o escríbeme la información del nuevo cliente y
+                            yo organizo
+                            todo.</p>
+                        <div class="chat-quick-actions">
+                            <button class="quick-action-btn" onclick="sendQuickAction('Nuevo cliente')">🆕 Nuevo
+                                cliente</button>
+                            <button class="quick-action-btn" onclick="sendQuickAction('Revisar placeholders')">🔍
+                                Revisar
+                                campos</button>
+                            <button class="quick-action-btn" onclick="sendQuickAction('Resumen del contrato')">📋
+                                Resumen</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <div class="input-snippet" id="inputSnippet">
+                            <button class="input-snippet-close" onclick="clearSnippet()">×</button>
+                            <span id="inputSnippetText"></span>
+                        </div>
+                        <div class="chat-input-row">
+                            <textarea id="chatInput" rows="1" placeholder="Escribe un mensaje o selecciona texto..."
+                                onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
+                            <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Enviar">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /editor-main -->
+    </div><!-- /editor-layout -->
+
+    <!-- SELECTION POPUP -->
+    <div class="selection-popup" id="selectionPopup">
+        <button class="popup-btn" onclick="sendSelectionToChat()">💬 Chat</button>
+    </div>
+
+    <script>
+        // =============================================
+        //  CONFIGURATION
+        // =============================================
+        const GEMINI_API_KEY = 'AQ.Ab8RN6I8xttzdmc8F8MWsHJjnxCUuzeHh3x9ul7kW1HFmA-Y9g';
+        const GEMINI_MODEL = 'gemini-2.5-flash';
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+        const SYSTEM_PROMPT = `Eres un asistente legal especializado en contratos de servicios profesionales de diseño y desarrollo web. Tu trabajo es ayudar al usuario a completar y editar contratos con información de nuevos clientes.
+
+REGLAS ESTRICTAS QUE DEBES SEGUIR SIEMPRE:
+
+1. ZONAS PROTEGIDAS — NUNCA modifiques ni sugieras cambios en:
+   - Cláusulas de propiedad intelectual (sección 4)
+   - Acuerdo de confidencialidad (cláusula 4.6)
+   - Limitación de responsabilidad (cláusula 5.6)
+   - Rescisión y terminación (sección 6)
+   - Independencia laboral (cláusula 5.5)
+   - Garantías legales (cláusula 4.5)
+   - Derecho de subsanación (cláusula 3.5)
+   - Promoción y portafolio (cláusula 3.6)
+   Estas son cláusulas legales esenciales y no se deben alterar.
+
+2. ZONAS EDITABLES — Solo puedes editar:
+   - Datos del cliente (nombre, razón social, dirección, cédula/RNC, correo, representante legal)
+   - Datos del diseñador (nombre, estudio, dirección, cédula, correo)
+   - Fechas (emisión, firma, contrato)
+   - Montos y cifras del presupuesto (desglose financiero, calendario de pagos)
+   - Descripción de fases de trabajo y cronograma
+   - Lo que el usuario te pida EXPLÍCITAMENTE por chat
+
+3. NUNCA ASUMAS INFORMACIÓN — Si el usuario te da datos incompletos de un nuevo cliente:
+   - Genera una lista organizada de PREGUNTAS sobre todo lo que falta
+   - Agrupa las preguntas por categoría (datos del cliente, datos del diseñador, financieros, fechas)
+   - No inventes datos, no rellenes campos con suposiciones
+   - Es un documento legal, cada dato debe ser proporcionado y confirmado
+
+4. FORMATO DE PROPUESTAS DE CAMBIO — Cuando propongas editar algo:
+   - Usa el formato: **ANTES:** [texto actual] → **DESPUÉS:** [texto nuevo]
+   - Lista TODOS los cambios que harás
+   - Pide confirmación al usuario antes de aplicar
+   - Si el usuario confirma, responde con un bloque JSON de cambios con el formato:
+     %%%CHANGES_START%%%
+     [{"selector": "CSS selector o data-placeholder value", "oldText": "texto viejo", "newText": "texto nuevo"}]
+     %%%CHANGES_END%%%
+
+5. IDIOMA — Responde SIEMPRE en español.
+
+6. FLUJO DE TRABAJO RECOMENDADO:
+   a) El usuario te da información del cliente
+   b) Tú preguntas todo lo que falta
+   c) Una vez tengas toda la info, propones los cambios con ANTES/DESPUÉS
+   d) El usuario aprueba
+   e) Aplicas los cambios
+
+7. Si el usuario te pasa un fragmento de texto seleccionado del contrato, ese es el contexto de lo que quiere editar. Enfócate solo en esa sección específica.`;
+
+        // =============================================
+        //  STATE
+        // =============================================
+        let chatHistory = [];
+        let currentZoom = 100;
+        let selectedText = '';
+        let pendingSnippet = '';
+        let isProcessing = false;
+        let pendingChanges = null;
+
+        // =============================================
+        //  ZOOM CONTROLS
+        // =============================================
+        function changeZoom(delta) {
+            currentZoom = Math.max(50, Math.min(150, currentZoom + delta));
+            document.getElementById('zoomLevel').textContent = currentZoom + '%';
+            document.getElementById('canvasInner').style.transform = `scale(${currentZoom / 100})`;
+        }
+
+        // =============================================
+        //  CHAT TOGGLE
+        // =============================================
+        function toggleChat() {
+            const panel = document.getElementById('chatPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        // =============================================
+        //  TEXT SELECTION → POPUP
+        // =============================================
+        const popup = document.getElementById('selectionPopup');
+        const contractContainer = document.getElementById('contractContainer');
+
+        document.addEventListener('mouseup', function (e) {
+            // Small delay to let selection finalize
+            setTimeout(() => {
+                const sel = window.getSelection();
+                const text = sel.toString().trim();
+
+                // Check if selection is inside the contract
+                if (text.length > 3 && sel.rangeCount > 0) {
+                    const range = sel.getRangeAt(0);
+                    const ancestor = range.commonAncestorContainer;
+                    const isInContract = contractContainer.contains(ancestor.nodeType === 3 ? ancestor.parentElement : ancestor);
+
+                    if (isInContract) {
+                        selectedText = text;
+                        const rect = range.getBoundingClientRect();
+                        popup.style.left = (rect.left + rect.width / 2 - 40) + 'px';
+                        popup.style.top = (rect.top - 40) + 'px';
+                        popup.classList.add('visible');
+                        return;
+                    }
+                }
+                popup.classList.remove('visible');
+            }, 10);
+        });
+
+        document.addEventListener('mousedown', function (e) {
+            if (!popup.contains(e.target)) {
+                popup.classList.remove('visible');
+            }
+        });
+
+        function sendSelectionToChat() {
+            if (!selectedText) return;
+
+            // Ensure chat is open
+            const panel = document.getElementById('chatPanel');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+            }
+
+            // Set snippet in input
+            pendingSnippet = selectedText;
+            const snippetEl = document.getElementById('inputSnippet');
+            const snippetTextEl = document.getElementById('inputSnippetText');
+            snippetTextEl.textContent = selectedText.substring(0, 200) + (selectedText.length > 200 ? '...' : '');
+            snippetEl.classList.add('visible');
+
+            // Focus input
+            document.getElementById('chatInput').focus();
+
+            // Hide popup
+            popup.classList.remove('visible');
+            window.getSelection().removeAllRanges();
+        }
+
+        function clearSnippet() {
+            pendingSnippet = '';
+            document.getElementById('inputSnippet').classList.remove('visible');
+        }
+
+        // =============================================
+        //  CHAT LOGIC
+        // =============================================
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        }
+
+        function handleInputKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function scrollToBottom() {
+            const msgs = document.getElementById('chatMessages');
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        function renderMarkdown(text) {
+            // Simple markdown rendering
+            let html = text
+                // Bold
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Italic
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Code
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // Unordered lists
+                .replace(/^[\-\•] (.+)/gm, '<li>$1</li>')
+                // Numbered lists
+                .replace(/^\d+\.\s(.+)/gm, '<li>$1</li>')
+                // Line breaks
+                .replace(/\n/g, '<br>');
+
+            // Wrap consecutive <li> in <ul>
+            html = html.replace(/((?:<li>.*?<\/li><br>?)+)/g, '<ul>$1</ul>');
+            html = html.replace(/<br><\/ul>/g, '</ul>');
+            html = html.replace(/<ul><br>/g, '<ul>');
+
+            return html;
+        }
+
+        function addMessage(role, text, snippetText) {
+            const msgs = document.getElementById('chatMessages');
+
+            // Remove welcome if still present
+            const welcome = msgs.querySelector('.chat-welcome');
+            if (welcome) welcome.remove();
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `msg ${role}`;
+
+            const label = document.createElement('div');
+            label.className = 'msg-label';
+            label.innerHTML = role === 'user'
+                ? '<span>●</span> Tú'
+                : '<span>●</span> AI Assistant';
+            msgDiv.appendChild(label);
+
+            // Add snippet reference if present
+            if (snippetText) {
+                const snippetDiv = document.createElement('div');
+                snippetDiv.innerHTML = `
+      <div class="msg-snippet-label">📎 Texto seleccionado</div>
+      <div class="msg-snippet">${escapeHtml(snippetText)}</div>
+    `;
+                msgDiv.appendChild(snippetDiv);
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = 'msg-bubble';
+            bubble.innerHTML = role === 'ai' ? renderMarkdown(text) : escapeHtml(text);
+            msgDiv.appendChild(bubble);
+
+            msgs.appendChild(msgDiv);
+            scrollToBottom();
+
+            return msgDiv;
+        }
+
+        function addTypingIndicator() {
+            const msgs = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'msg ai';
+            div.id = 'typingIndicator';
+            div.innerHTML = `
+    <div class="msg-label"><span>●</span> AI Assistant</div>
+    <div class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  `;
+            msgs.appendChild(div);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            const ind = document.getElementById('typingIndicator');
+            if (ind) ind.remove();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function sendQuickAction(action) {
+            document.getElementById('chatInput').value = action;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || isProcessing) return;
+
+            isProcessing = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            // Build user message with snippet context
+            let fullMessage = '';
+            const snippetForDisplay = pendingSnippet;
+
+            if (pendingSnippet) {
+                fullMessage = `[TEXTO SELECCIONADO DEL CONTRATO]:\n"${pendingSnippet}"\n\n[MI INSTRUCCIÓN]:\n${text}`;
+                clearSnippet();
+            } else {
+                fullMessage = text;
+            }
+
+            // Get current contract HTML for context (only placeholders)
+            const placeholders = [];
+            document.querySelectorAll('[data-placeholder]').forEach(el => {
+                placeholders.push({ field: el.getAttribute('data-placeholder'), value: el.textContent.trim() });
+            });
+
+            // Add user message to UI
+            addMessage('user', text, snippetForDisplay);
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Build chat history for API
+            chatHistory.push({
+                role: 'user',
+                parts: [{ text: fullMessage + '\n\n[CAMPOS ACTUALES DEL CONTRATO]: ' + JSON.stringify(placeholders) }]
+            });
+
+            addTypingIndicator();
+
+            try {
+                const response = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                        contents: chatHistory,
+                        generationConfig: {
+                            temperature: 0.7,
+                            maxOutputTokens: 4096
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                removeTypingIndicator();
+
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    const aiText = data.candidates[0].content.parts[0].text;
+
+                    // Check if AI proposed changes with our format
+                    const changesMatch = aiText.match(/%%%CHANGES_START%%%([\s\S]*?)%%%CHANGES_END%%%/);
+
+                    if (changesMatch) {
+                        // Remove the JSON block from displayed text
+                        const displayText = aiText.replace(/%%%CHANGES_START%%%[\s\S]*?%%%CHANGES_END%%%/, '').trim();
+                        const msgDiv = addMessage('ai', displayText);
+
+                        try {
+                            pendingChanges = JSON.parse(changesMatch[1].trim());
+                            // Add changes UI
+                            const changesDiv = document.createElement('div');
+                            changesDiv.className = 'msg-changes';
+                            changesDiv.innerHTML = `
+            <div class="msg-changes-title">⚡ Cambios propuestos</div>
+            ${pendingChanges.map((c, i) => `
+              <div class="change-item change-before">${escapeHtml(c.oldText)}</div>
+              <div class="change-item change-after">${escapeHtml(c.newText)}</div>
+            `).join('<br>')}
+            <div class="change-actions">
+              <button class="change-btn approve" onclick="applyChanges()">✓ Aplicar cambios</button>
+              <button class="change-btn reject" onclick="rejectChanges()">✕ Rechazar</button>
+            </div>
+          `;
+                            msgDiv.appendChild(changesDiv);
+                            scrollToBottom();
+                        } catch (e) {
+                            console.error('Error parsing changes:', e);
+                        }
+                    } else {
+                        addMessage('ai', aiText);
+                    }
+
+                    chatHistory.push({
+                        role: 'model',
+                        parts: [{ text: aiText }]
+                    });
+                } else {
+                    const errorMsg = data.error ? data.error.message : 'Error desconocido de la API';
+                    addMessage('ai', `⚠️ Error: ${errorMsg}`);
+                }
+            } catch (err) {
+                removeTypingIndicator();
+                addMessage('ai', `⚠️ Error de conexión: ${err.message}`);
+            }
+
+            isProcessing = false;
+            document.getElementById('sendBtn').disabled = false;
+        }
+
+        // =============================================
+        //  APPLY / REJECT CHANGES
+        // =============================================
+        function applyChanges() {
+            if (!pendingChanges) return;
+
+            let applied = 0;
+            const container = document.getElementById('contractContainer');
+
+            pendingChanges.forEach(change => {
+                // Try by data-placeholder first
+                if (change.selector) {
+                    const el = container.querySelector(`[data-placeholder="${change.selector}"]`);
+                    if (el) {
+                        el.textContent = change.newText;
+                        // Flash green
+                        el.style.transition = 'background 0.3s';
+                        el.style.background = 'rgba(74,222,128,0.3)';
+                        setTimeout(() => { el.style.background = ''; }, 1500);
+                        applied++;
+                        return;
+                    }
+                }
+
+                // Fallback: search and replace text in contract
+                if (change.oldText && change.newText) {
+                    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+                    while (walker.nextNode()) {
+                        const node = walker.currentNode;
+                        if (node.textContent.includes(change.oldText)) {
+                            node.textContent = node.textContent.replace(change.oldText, change.newText);
+                            // Flash the parent
+                            const parent = node.parentElement;
+                            if (parent) {
+                                parent.style.transition = 'background 0.3s';
+                                parent.style.background = 'rgba(74,222,128,0.3)';
+                                setTimeout(() => { parent.style.background = ''; }, 1500);
+                            }
+                            applied++;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            addMessage('ai', `✅ ${applied} cambio(s) aplicado(s) exitosamente al contrato.`);
+            pendingChanges = null;
+
+            // Remove the change actions buttons
+            document.querySelectorAll('.change-actions').forEach(el => {
+                el.innerHTML = '<span style="color: var(--success); font-size: 12px; font-weight: 600;">✓ Cambios aplicados</span>';
+            });
+        }
+
+        function rejectChanges() {
+            pendingChanges = null;
+            addMessage('ai', '↩️ Cambios rechazados. ¿Qué te gustaría modificar?');
+            document.querySelectorAll('.change-actions').forEach(el => {
+                el.innerHTML = '<span style="color: var(--text-muted); font-size: 12px;">Cambios descartados</span>';
+            });
+        }
+
+        // =============================================
+        //  KEYBOARD SHORTCUTS
+        // =============================================
+        document.addEventListener('keydown', function (e) {
+            // Ctrl+Shift+K → Toggle chat
+            if (e.ctrlKey && e.shiftKey && e.key === 'K') {
+                e.preventDefault();
+                toggleChat();
+                setTimeout(() => document.getElementById('chatInput').focus(), 100);
+            }
+        });
+
+        // =============================================
+        //  INIT
+        // =============================================
+        document.addEventListener('DOMContentLoaded', function () {
+            // Auto-focus chat input when panel is visible
+            document.getElementById('chatInput').focus();
+        });
+    </script>
+
+</body>
+
+</html>

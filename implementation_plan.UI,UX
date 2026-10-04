@@ -1,0 +1,33 @@
+# Reemplazo del Flujo de Ejecución de Terminal
+
+Este plan detalla la implementación de un nuevo flujo asíncrono y de confirmación visual para la ejecución de comandos de terminal por parte de la IA, integrando la lógica de pop-ups y los estados de carga solicitados en la interfaz de chat.
+
+## User Review Required
+
+> [!IMPORTANT]
+> El flujo original de ejecución (`execute_command`) en `handleSendMessage` se pausará mediante una Promesa hasta que el usuario interactúe con el pop-up. Esto detendrá la generación de la IA hasta recibir la confirmación o rechazo. ¿Estás de acuerdo con este bloqueo asíncrono para asegurar que ningún comando se ejecute sin tu permiso?
+
+## Proposed Changes
+
+### `app/src/App.tsx`
+
+La modificación central se hará en este archivo, que maneja el estado global, el chat y las llamadas a herramientas (Tool Calls).
+
+#### [MODIFY] App.tsx
+- **Estado de Permiso de Terminal:** Añadiré un nuevo estado de React `pendingTerminalAction` que almacenará el comando a ejecutar y los callbacks `resolve` de la Promesa para aprobar o rechazar la ejecución.
+- **Pop-up de Permiso (Estado 1):** Crear un componente `TerminalPermissionPopup` que se muestre en la esquina inferior derecha (fixed, bottom-right). Mostrará el título `Ejecutar [comando] en la terminal` y los botones `Submit` (rojo/acento) y `Cancelar` (gris, sin borde).
+- **Modificación en `handleSendMessage`:** Al procesar un `functionCall` de tipo `execute_command`, envolveré la ejecución en una Promesa: `const approved = await new Promise(resolve => setPendingTerminalAction({ command, resolve }));`. 
+    - Si el usuario aprueba (`Submit`), el estado de la herramienta cambia a "Ejecutando" y se procesa el comando normalmente, enviando el resultado a la IA.
+    - Si el usuario cancela (`Cancelar`), se devolverá un error descriptivo a la IA indicando que el usuario denegó el permiso, lo que forzará a la IA a manejar el error de forma conversacional (Ej. "Entiendo, ¿hay otra forma en la que pueda ayudarte?").
+- **Nuevo UI de Loader en Chat (Estado 2, 3 y 4):** Se actualizará (o reemplazará) el componente `ToolCallBlock` actual. Cuando el comando esté en espera (pending), mostrará el spinner y el texto `Esperando acceso...`. Cuando esté ejecutándose, utilizará el estilo de log dinámico solicitado por ti:
+  `[ESCANEO] [comando]... Xs` con el ícono rotando y los estilos proporcionados en tu ejemplo HTML. Una vez resuelto, se ocultará o mostrará un divisor de éxito orgánico en el chat.
+
+## Verification Plan
+
+### Manual Verification
+1. Enviar un prompt a la IA que requiera ejecutar un comando (Ej. "Ejecuta un ping a google.com").
+2. Verificar que la IA se pausa y aparece el pop-up de permiso.
+3. Verificar que el loader en el chat dice "Esperando acceso..." mientras no se interactúe con el pop-up.
+4. Hacer clic en "Cancelar" y verificar que la IA responde naturalmente al rechazo sin romper la interfaz.
+5. Hacer clic en "Submit" y verificar que el loader del chat cambie a "Ejecutando [comando]..." con la animación y temporizador que compartiste.
+6. Confirmar que una vez devuelto el output, la IA continúa respondiendo de forma normal con la información obtenida.

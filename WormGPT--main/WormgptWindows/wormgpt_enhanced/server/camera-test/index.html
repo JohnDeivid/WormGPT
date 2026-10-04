@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Cámara Local</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        video { width: 640px; height: 480px; background: #eee; border: 1px solid #ccc; }
+        canvas { display: none; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Prueba de cámara</h1>
+    <p>Esta es una prueba local. Necesito permiso para acceder a tu cámara.</p>
+    <button id="startButton">Activar cámara</button>
+    <video id="video" autoplay></video>
+    <button id="snapButton" disabled>Tomar foto</button>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const snapButton = document.getElementById('snapButton');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        startButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                snapButton.disabled = false;
+                startButton.disabled = true;
+            } catch (err) {
+                console.error("Error al acceder a la cámara: ", err);
+                alert("No se pudo acceder a la cámara. Asegúrate de dar permiso.");
+            }
+        });
+
+        snapButton.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL('image/png');
+            
+            // Enviar la imagen al servidor
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Éxito:', data);
+                alert('Foto guardada en: ' + data.file_path);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Error al guardar la foto.');
+            });
+        });
+    </script>
+</body>
+</html>
